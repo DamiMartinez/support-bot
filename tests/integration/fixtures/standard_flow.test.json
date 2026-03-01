@@ -1,0 +1,67 @@
+{
+  "description": "Standard happy-path support ticket creation",
+  "initial_session_state": {},
+  "conversation": [
+    {
+      "role": "user",
+      "content": "Hi, I need help with my order."
+    },
+    {
+      "role": "agent",
+      "content_contains": ["help", "support", "assist"]
+    },
+    {
+      "role": "user",
+      "content": "My name is John Smith and my email is john.smith@example.com"
+    },
+    {
+      "role": "agent",
+      "content_contains": ["order"]
+    },
+    {
+      "role": "user",
+      "content": "My order number is ORD78901"
+    },
+    {
+      "role": "agent",
+      "content_contains": ["issue", "problem", "help"]
+    },
+    {
+      "role": "user",
+      "content": "I received the wrong item. I ordered a blue shirt but got a red one."
+    },
+    {
+      "role": "agent",
+      "content_contains": ["urgent", "urgency", "priority"]
+    },
+    {
+      "role": "user",
+      "content": "It's medium urgency, I need it for next week."
+    },
+    {
+      "role": "agent",
+      "content_contains": ["confirm", "summary", "correct"]
+    },
+    {
+      "role": "user",
+      "content": "Yes, that's all correct, please proceed."
+    },
+    {
+      "role": "agent",
+      "content_contains": ["SE-", "ticket", "confirmation"]
+    }
+  ],
+  "expected_final_state": {
+    "support_phase": "COMPLETED",
+    "ticket:customer_name": "John Smith",
+    "ticket:email": "john.smith@example.com",
+    "ticket:order_number": "ORD78901",
+    "ticket:problem_category": "wrong_item",
+    "ticket:urgency_level": "medium"
+  },
+  "expected_tools_called": [
+    "validate_order_number",
+    "save_field",
+    "finalize_ticket"
+  ]
+}

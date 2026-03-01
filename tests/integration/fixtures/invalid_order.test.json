@@ -1,0 +1,59 @@
+{
+  "description": "Flow where customer provides an invalid order number first, then corrects it",
+  "initial_session_state": {},
+  "conversation": [
+    {
+      "role": "user",
+      "content": "Hi, my name is Maria Garcia, email maria@test.com. Order number ORD-INVALID."
+    },
+    {
+      "role": "agent",
+      "content_contains": ["invalid", "order number", "alphanumeric"]
+    },
+    {
+      "role": "user",
+      "content": "Sorry, it's ORD55512"
+    },
+    {
+      "role": "agent",
+      "content_contains": ["issue", "problem"]
+    },
+    {
+      "role": "user",
+      "content": "My package arrived completely damaged, the box was crushed and the item inside was broken."
+    },
+    {
+      "role": "agent",
+      "content_contains": ["urgency", "urgent", "priority"]
+    },
+    {
+      "role": "user",
+      "content": "High urgency please."
+    },
+    {
+      "role": "agent",
+      "content_contains": ["confirm", "summary"]
+    },
+    {
+      "role": "user",
+      "content": "Yes, confirmed."
+    },
+    {
+      "role": "agent",
+      "content_contains": ["SE-", "confirmation"]
+    }
+  ],
+  "expected_final_state": {
+    "support_phase": "COMPLETED",
+    "ticket:customer_name": "Maria Garcia",
+    "ticket:email": "maria@test.com",
+    "ticket:order_number": "ORD55512",
+    "ticket:problem_category": "damaged_item",
+    "ticket:urgency_level": "high"
+  },
+  "expected_tools_called": [
+    "validate_order_number",
+    "save_field",
+    "finalize_ticket"
+  ]
+}
