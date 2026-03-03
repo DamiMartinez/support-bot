@@ -9,6 +9,8 @@ from support_bot.models.schemas import TicketRecord
 from support_bot.storage.session_store import (
     REQUIRED_FIELDS,
     extract_ticket_from_state,
+    find_ticket_by_confirmation,
+    find_tickets_by_email,
     generate_summary,
     missing_fields,
     save_ticket,
@@ -162,4 +164,70 @@ def finalize_ticket(tool_context: ToolContext) -> dict:
         "message": (
             f"Ticket created successfully. Confirmation number: {record.confirmation_number}"
         ),
+    }
+
+
+def _format_ticket_for_agent(record) -> dict:
+    return {
+        "confirmation_number": record.confirmation_number,
+        "status": record.status,
+        "created_at": record.created_at,
+        "customer_name": record.ticket.customer_name,
+        "order_number": record.ticket.order_number,
+        "problem_category": record.ticket.problem_category.replace("_", " "),
+        "problem_description": record.ticket.problem_description,
+        "urgency_level": record.ticket.urgency_level,
+    }
+
+
+def lookup_ticket(
+    confirmation_number: str = "",
+    email: str = "",
+    tool_context: ToolContext = None,
+) -> dict:
+    """Look up existing support tickets by confirmation number or email address.
+
+    Use this when a customer asks about the status of a previous ticket or wants
+    to know what tickets they have open. Provide either a confirmation number
+    (e.g. SE-20260303-XXXX) or an email address.
+
+    Args:
+        confirmation_number: The confirmation number from a prior ticket (e.g. SE-20260303-XXXX).
+        email: Customer's email address to retrieve all their tickets.
+
+    Returns:
+        A dict with 'found' (bool), 'tickets' (list of ticket details), and 'message'.
+    """
+    if not confirmation_number and not email:
+        return {
+            "found": False,
+            "tickets": [],
+            "message": "Please provide a confirmation number or email address to look up tickets.",
+        }
+
+    if confirmation_number:
+        record = find_ticket_by_confirmation(confirmation_number)
+        if record:
+            return {
+                "found": True,
+                "tickets": [_format_ticket_for_agent(record)],
+                "message": f"Found ticket {record.confirmation_number}.",
+            }
+        return {
+            "found": False,
+            "tickets": [],
+            "message": f"No ticket found with confirmation number {confirmation_number!r}.",
+        }
+
+    records = find_tickets_by_email(email)
+    if records:
+        return {
+            "found": True,
+            "tickets": [_format_ticket_for_agent(r) for r in records],
+            "message": f"Found {len(records)} ticket(s) for {email}.",
+        }
+    return {
+        "found": False,
+        "tickets": [],
+        "message": f"No tickets found for email address {email!r}.",
     }

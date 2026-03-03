@@ -17,7 +17,7 @@ from support_bot.callbacks import auto_save_memory_callback, language_detection_
 from support_bot.prompts import build_instruction
 from support_bot.tools.rag_tools import search_knowledge_base
 from support_bot.tools.sentiment_tools import analyze_sentiment
-from support_bot.tools.support_tools import finalize_ticket, save_field
+from support_bot.tools.support_tools import finalize_ticket, lookup_ticket, save_field
 from support_bot.tools.validation_tools import validate_email, validate_order_number
 
 load_dotenv()
@@ -28,6 +28,7 @@ _VOICE_MODEL = os.getenv("ADK_VOICE_MODEL", "gemini-live-2.5-flash-native-audio"
 _SHARED_TOOLS = [
     save_field,
     finalize_ticket,
+    lookup_ticket,
     validate_order_number,
     validate_email,
     search_knowledge_base,

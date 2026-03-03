@@ -1,6 +1,8 @@
-# Orbio AI — E-commerce Customer Support Bot
+# E-commerce Customer Support Bot
 
-An intelligent conversational agent built with **Google ADK** + **Gemini 2.5 Flash** that conducts structured customer support interviews, extracts ticket data into JSON, and generates summaries.
+An intelligent, white-label conversational agent built with **Google ADK** +
+**Gemini 2.5 Flash** that conducts structured customer support interviews, performs
+semantic knowledge-base search, and persists tickets with full lookup support.
 
 ---
 
@@ -44,8 +46,9 @@ An intelligent conversational agent built with **Google ADK** + **Gemini 2.5 Fla
    ┌──────────▼──────────┐                             ┌───────────▼──────────┐
    │  session_store.py   │                             │  knowledge_base.py   │
    │  data/tickets/*.json│                             │  knowledge_base/*.md │
-   │  data/sessions/*.json│                            │  (chunked + indexed) │
-   └─────────────────────┘                             └──────────────────────┘
+   │  data/sessions/*.json│                            │  ChromaDB vector store│
+   └─────────────────────┘                             │  (Gemini embeddings) │
+                                                       └──────────────────────┘
               │
    ┌──────────▼──────────┐
    │  sentiment_tools.py │
@@ -93,7 +96,8 @@ Phase transitions are driven by the `after_agent_callback` which inspects `sessi
 | Structured data collection | `save_field` tool + session state |
 | Input validation | `validate_order_number`, `validate_email` tools + Pydantic |
 | Ticket persistence | `data/tickets/<uuid>.json` via Pydantic models |
-| RAG knowledge base | Markdown chunks + keyword search in `search_knowledge_base` |
+| RAG knowledge base | Semantic vector search via ChromaDB + Gemini embeddings (`search_knowledge_base`) |
+| Ticket lookup | Look up existing tickets by confirmation number or email (`lookup_ticket`) |
 | Sentiment analysis | Rule-based scoring in `analyze_sentiment` |
 | Dynamic tone adaptation | Frustration detected → empathy addendum in system prompt |
 | Language detection | `before_agent_callback` detects language on first message |
@@ -196,7 +200,10 @@ support-bot/
 ├── knowledge_base/           # Markdown knowledge base
 ├── audio/speech.py           # Google Cloud STT + TTS
 ├── cli.py                    # CLI entry point
-├── data/                     # Runtime data (tickets, sessions)
+├── data/                     # Runtime data (gitignored)
+│   ├── tickets/              # One JSON file per ticket
+│   ├── sessions/             # Session log files
+│   └── chroma/               # ChromaDB vector store (auto-created on first run)
 ├── tests/                    # Unit + integration tests
 ├── sample_conversations/     # Annotated conversation transcripts
 └── pyproject.toml
@@ -222,21 +229,25 @@ For a demo/interview context, file-based JSON is zero-infrastructure, immediatel
 
 A separate LLM call for sentiment adds latency and cost on every turn. A lightweight keyword-scoring heuristic is fast, deterministic, and easily testable. In production, this could be upgraded to a dedicated sentiment model.
 
-### Why keyword-based RAG instead of vector search?
+### Why ChromaDB + Gemini embeddings for RAG?
 
-The knowledge base is small (4 files, ~20 sections). TF-style keyword matching is sufficient and requires no embedding model or vector DB. For a larger KB, swapping to `google.adk.memory.InMemoryMemoryService` + embeddings is straightforward.
+Knowledge-base markdown files are chunked by `##` heading and embedded via
+`gemini-embedding-001` into a persistent ChromaDB collection (`data/chroma/`).
+The collection is auto-ingested on first run and reused on subsequent runs.
+Semantic search handles paraphrased queries far better than keyword matching,
+and the latency cost (one embedding call per search query) is negligible in a
+support context.
 
 ---
 
 ## Potential Improvements
 
-1. **Vector RAG**: Replace keyword search with `sentence-transformers` embeddings + cosine similarity for better recall on paraphrased queries.
-2. **Vertex AI Session Service**: Swap `InMemorySessionService` for `VertexAiSessionService` for multi-instance deployment.
-3. **Multi-turn memory**: Use `InMemoryMemoryService.add_session_to_memory()` to give the agent cross-session recall (e.g., recognizing returning customers).
-4. **Streaming responses**: Implement `runner.run_live()` for token-by-token streaming in the CLI and web UI.
-5. **LLM-based sentiment**: Replace rule-based scoring with a dedicated lightweight model call.
-6. **Ticket webhook**: On `finalize_ticket`, POST to a CRM API (Zendesk, Salesforce) instead of writing JSON.
-7. **Authentication**: Add OAuth2 session management so customers log in before starting a conversation.
-8. **Multi-language STT**: Configure Google Cloud STT to auto-detect language for global support.
-9. **Admin dashboard**: A FastAPI web interface to view, filter, and update tickets.
-10. **A/B testing**: Use ADK's evaluation framework to test different prompt strategies and measure resolution rates.
+1. **Vertex AI Session Service**: Swap `InMemorySessionService` for `VertexAiSessionService` for multi-instance deployment.
+2. **Multi-turn memory**: Use `InMemoryMemoryService.add_session_to_memory()` to give the agent cross-session recall (e.g., recognizing returning customers).
+3. **Streaming responses**: Implement `runner.run_live()` for token-by-token streaming in the CLI and web UI.
+4. **LLM-based sentiment**: Replace rule-based scoring with a dedicated lightweight model call.
+5. **Ticket webhook**: On `finalize_ticket`, POST to a CRM API (Zendesk, Salesforce) instead of writing JSON.
+6. **Authentication**: Add OAuth2 session management so customers log in before starting a conversation.
+7. **Multi-language STT**: Configure Google Cloud STT to auto-detect language for global support.
+8. **Admin dashboard**: A FastAPI web interface to view, filter, and update tickets.
+9. **A/B testing**: Use ADK's evaluation framework to test different prompt strategies and measure resolution rates.

@@ -91,6 +91,36 @@ REQUIRED_FIELDS = [
 ]
 
 
+def find_ticket_by_confirmation(confirmation_number: str) -> Optional[TicketRecord]:
+    """Return a TicketRecord matching the given confirmation number, or None."""
+    _ensure_dirs()
+    target = confirmation_number.upper().strip()
+    for path in TICKETS_DIR.glob("*.json"):
+        try:
+            record = TicketRecord.model_validate_json(path.read_text())
+            if record.confirmation_number.upper() == target:
+                return record
+        except Exception:
+            pass
+    return None
+
+
+def find_tickets_by_email(email: str) -> list[TicketRecord]:
+    """Return all TicketRecords whose customer email matches (case-insensitive)."""
+    _ensure_dirs()
+    target = email.lower().strip()
+    results = []
+    for path in TICKETS_DIR.glob("*.json"):
+        try:
+            record = TicketRecord.model_validate_json(path.read_text())
+            if record.ticket.email.lower() == target:
+                results.append(record)
+        except Exception:
+            pass
+    results.sort(key=lambda r: r.created_at, reverse=True)
+    return results
+
+
 def missing_fields(state: dict) -> list[str]:
     """Return list of required ticket fields not yet collected."""
     return [

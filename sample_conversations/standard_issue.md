@@ -4,7 +4,7 @@ This transcript demonstrates the happy-path flow: all data collected cleanly in 
 
 ---
 
-**Agent:** Hi there! I'm the Orbio customer support assistant. I'm here to help you resolve any issues with your order. Could I start with your full name and email address?
+**Agent:** Hi there! I'm your customer support assistant. I'm here to help you resolve any issues with your order. Could I start with your full name and email address?
 
 **Customer:** Sure, my name is John Smith and my email is john.smith@example.com
 

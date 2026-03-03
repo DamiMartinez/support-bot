@@ -1,6 +1,7 @@
 .env
 data/tickets/
 data/sessions/
+data/chroma/
 __pycache__/
 *.pyc
 .venv/

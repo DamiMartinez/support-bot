@@ -8,12 +8,12 @@
 - **Typical wait time:** Under 2 minutes during business hours
 
 ### Email Support
-- **Address:** support@orbio-store.example.com
+- **Address:** support@store.example.com
 - **Response time:** Within 24 hours on business days
 - **Best for:** Complex issues requiring documentation, photos, or order history
 
 ### Phone Support
-- **Number:** 1-800-ORBIO-01 (1-800-672-4601)
+- **Number:** 1-800-555-0100
 - **Hours:** Monday–Friday 8 AM–8 PM EST
 - **Best for:** Urgent billing issues or account security concerns
 
@@ -28,7 +28,7 @@ Handles: High-value order disputes ($200+), repeated failed resolutions, legal o
 
 ### Tier 3 — Management (extreme cases)
 Handles: Formal complaints, media inquiries, regulatory/legal matters
-**Access:** Via written request to legal@orbio-store.example.com
+**Access:** Via written request to legal@store.example.com
 
 ## When to Escalate
 An issue should be escalated to Tier 2 when:
@@ -43,6 +43,6 @@ Issues marked **high urgency** are routed to the next available senior agent and
 
 ## Self-Service Resources
 - Order tracking: Account dashboard > "My Orders"
-- Return portal: support.orbio-store.example.com/returns
-- FAQ: support.orbio-store.example.com/faq
-- Community forum: community.orbio-store.example.com
+- Return portal: support.store.example.com/returns
+- FAQ: support.store.example.com/faq
+- Community forum: community.store.example.com

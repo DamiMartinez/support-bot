@@ -3,12 +3,14 @@
 import os
 import re
 from pathlib import Path
+from typing import List
 
 import chromadb
-from chromadb.utils.embedding_functions import GoogleGenerativeAiEmbeddingFunction
+import chromadb.utils.embedding_functions as embedding_functions
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 _KB_DIR = Path(__file__).parent.parent.parent / "knowledge_base"
 _CHROMA_DIR = Path(__file__).parent.parent.parent / "data" / "chroma"
@@ -50,7 +52,7 @@ def get_collection():
 
     _CHROMA_DIR.mkdir(parents=True, exist_ok=True)
     client = chromadb.PersistentClient(path=str(_CHROMA_DIR))
-    ef = GoogleGenerativeAiEmbeddingFunction(api_key=os.environ["GOOGLE_API_KEY"])
+    ef = embedding_functions.GoogleGenaiEmbeddingFunction(model_name="models/gemini-embedding-001")
     col = client.get_or_create_collection(name=_COLLECTION_NAME, embedding_function=ef)
 
     # Ingest on first run (empty collection)

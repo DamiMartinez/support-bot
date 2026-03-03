@@ -1,6 +1,6 @@
 """InstructionProvider and all prompt templates for the support bot."""
 
-from google.adk.agents import ReadonlyContext
+from google.adk.agents.readonly_context import ReadonlyContext
 
 # Phase descriptions for the LLM
 _PHASE_GUIDE = {
@@ -37,10 +37,16 @@ before calling save_field for order_number.
 ## Tools at your disposal
 - save_field(field_name, field_value)       — record one ticket field
 - finalize_ticket()                         — create the ticket (CONFIRM phase only)
+- lookup_ticket(confirmation_number, email) — retrieve an existing ticket's status and details
 - validate_order_number(order_number)       — check format before saving
 - validate_email(email)                     — check format before saving
 - search_knowledge_base(query)              — look up policy/shipping info
 - analyze_sentiment(message)               — detect frustration; call when customer seems upset
+
+## Handling existing ticket inquiries
+If the customer asks about a previous ticket (status, what was reported, confirmation number, etc.),
+use lookup_ticket with their confirmation number or email address. Present the results clearly.
+Do NOT tell the customer you cannot look up tickets — you can.
 
 ## {categories_help}
 

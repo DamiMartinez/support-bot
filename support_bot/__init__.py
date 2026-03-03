@@ -1,4 +1,4 @@
-"""Orbio AI — E-commerce Customer Support Bot (Google ADK)."""
+"""E-commerce Customer Support Bot (Google ADK)."""
 
 from support_bot.agent import root_agent
 

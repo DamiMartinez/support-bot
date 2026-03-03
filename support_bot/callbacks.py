@@ -4,7 +4,7 @@ import re
 from typing import Optional
 
 from google.adk.agents.callback_context import CallbackContext
-from google.adk.types import Content
+from google.genai.types import Content
 
 
 # Simple language detection heuristics

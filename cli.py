@@ -10,8 +10,13 @@ Usage:
 
 import argparse
 import asyncio
+import logging
 import sys
 import uuid
+import warnings
+
+warnings.filterwarnings("ignore")
+logging.basicConfig(level=logging.ERROR)
 
 from dotenv import load_dotenv
 
@@ -38,13 +43,14 @@ async def run_text_loop(
 ) -> None:
     """Run the agent in text mode, reading from stdin and printing to stdout."""
     print("=" * 60)
-    print("  Orbio AI Customer Support Bot")
+    print("  E-commerce Customer Support Bot")
     print("  Type 'quit' or Ctrl+C to exit")
     print("=" * 60)
     print()
 
     turns: list[dict] = []
     initial_message = "Hello, I need help with an order."
+    completed_notified = False
 
     try:
         while True:
@@ -85,9 +91,9 @@ async def run_text_loop(
             session = await session_service.get_session(
                 app_name=APP_NAME, user_id=user_id, session_id=session_id
             )
-            if session and session.state.get("support_phase") == "COMPLETED":
-                print("\n[Session completed. Ticket created successfully.]\n")
-                break
+            if session and session.state.get("support_phase") == "COMPLETED" and not completed_notified:
+                print("[Ticket created successfully. Type 'quit' to exit or continue chatting.]\n")
+                completed_notified = True
 
     except KeyboardInterrupt:
         print("\n\n[Session interrupted by user]")
@@ -125,7 +131,7 @@ async def run_voice_loop(
         sys.exit(1)
 
     print("=" * 60)
-    print("  Orbio AI Customer Support Bot — Voice Mode")
+    print("  E-commerce Customer Support Bot — Voice Mode")
     print(f"  Model : {runner.agent.model}")
     print(f"  Voice : {voice_name}")
     print("  Ctrl+C to stop")
@@ -182,7 +188,7 @@ async def _save_session(
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Orbio AI Support Bot")
+    parser = argparse.ArgumentParser(description="E-commerce Customer Support Bot")
     parser.add_argument(
         "--voice", action="store_true",
         help="Enable real-time voice mode (Gemini Live API native audio)",

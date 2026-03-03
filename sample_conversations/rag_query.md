@@ -4,7 +4,7 @@ This transcript demonstrates the agent searching the knowledge base to answer po
 
 ---
 
-**Agent:** Hello! I'm the Orbio customer support assistant. How can I help you today?
+**Agent:** Hello! I'm your customer support assistant. How can I help you today?
 
 **Customer:** Hi, before I start — what's your return policy? My package arrived late and I want to know if I can still return it.
 
