@@ -23,7 +23,7 @@ from support_bot.tools.validation_tools import validate_email, validate_order_nu
 load_dotenv()
 
 _TEXT_MODEL = os.getenv("ADK_MODEL", "gemini-2.5-flash")
-_VOICE_MODEL = os.getenv("ADK_VOICE_MODEL", "gemini-live-2.5-flash-native-audio")
+_VOICE_MODEL = os.getenv("ADK_VOICE_MODEL", "gemini-2.5-flash-native-audio-preview-12-2025")
 
 _SHARED_TOOLS = [
     save_field,

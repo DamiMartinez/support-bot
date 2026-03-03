@@ -115,7 +115,7 @@ async def run_voice_loop(
     Architecture (bidirectional streaming):
       Mic (sounddevice InputStream, 16kHz PCM)
         → LiveRequestQueue.send_realtime()
-        → runner.run_live()                    [gemini-live-2.5-flash-native-audio]
+        → runner.run_live()                    [gemini-2.5-flash-native-audio-preview-12-2025]
         → live_events (audio/pcm, 24kHz)
         → sounddevice RawOutputStream
 
