@@ -2,7 +2,7 @@
 
 from google.adk.tools import ToolContext
 
-from support_bot.storage.knowledge_base import get_kb_chunks, search_knowledge_base_local
+from support_bot.storage.knowledge_base import search_chroma
 
 
 def search_knowledge_base(query: str, tool_context: ToolContext) -> dict:
@@ -20,23 +20,13 @@ def search_knowledge_base(query: str, tool_context: ToolContext) -> dict:
     Returns:
         A dict with 'results' (list of passages) and 'count' (int).
     """
-    chunks = get_kb_chunks()
-    if not chunks:
+    passages = search_chroma(query, top_k=3)
+    if not passages:
         return {
             "results": [],
             "count": 0,
             "message": "Knowledge base is empty or could not be loaded.",
         }
-
-    hits = search_knowledge_base_local(query, chunks, top_k=3)
-    passages = [
-        {
-            "source": chunk.source,
-            "heading": chunk.heading,
-            "content": chunk.content,
-        }
-        for chunk in hits
-    ]
 
     return {
         "results": passages,
