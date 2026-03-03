@@ -144,16 +144,29 @@ async def run_voice_loop(
 
     voice = LiveVoiceSession(voice_name=voice_name)
 
-    def _on_transcript(text: str) -> None:
-        """Print agent transcript as it streams in."""
-        print(text, end="", flush=True)
+    turns: list[dict] = []
+
+    def _on_agent_transcript(text: str, is_final: bool) -> None:
+        if is_final:
+            print(text, flush=True)
+            if text.strip():
+                turns.append({"role": "agent", "content": text.strip()})
+
+    def _on_user_transcript(text: str, is_final: bool) -> None:
+        if is_final and text.strip():
+            print(f"You: {text.strip()}", flush=True)
+            turns.append({"role": "user", "content": text.strip()})
 
     try:
-        await voice.run(runner, session, on_transcript=_on_transcript)
+        await voice.run(
+            runner, session,
+            on_agent_transcript=_on_agent_transcript,
+            on_user_transcript=_on_user_transcript,
+        )
     except KeyboardInterrupt:
         print("\n\n[Voice session ended by user]")
     finally:
-        await _save_session(session_service, session_id, user_id, turns=[])
+        await _save_session(session_service, session_id, user_id, turns)
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────

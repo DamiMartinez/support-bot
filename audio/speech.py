@@ -58,7 +58,7 @@ class LiveVoiceSession:
         runner = Runner(agent=voice_agent, ...)
 
         voice = LiveVoiceSession(voice_name="Aoede")
-        await voice.run(runner, session, on_transcript=print)
+        await voice.run(runner, session)
 
     The session streams microphone audio to the Gemini Live API and plays
     the model's audio response through the system speakers in real time.
@@ -82,7 +82,8 @@ class LiveVoiceSession:
         self,
         runner,
         session,
-        on_transcript: Optional[Callable[[str], None]] = None,
+        on_agent_transcript: Optional[Callable[[str, bool], None]] = None,
+        on_user_transcript: Optional[Callable[[str, bool], None]] = None,
     ) -> None:
         """Start the bidirectional voice session.
 
@@ -92,8 +93,10 @@ class LiveVoiceSession:
         Args:
             runner: ADK Runner configured with the voice agent.
             session: An ADK Session (from session_service.create_session).
-            on_transcript: Optional callback receiving the agent's text
-                           transcription as it streams in (partial chunks).
+            on_agent_transcript: Optional callback receiving (text, is_final) for
+                                 agent speech transcription.
+            on_user_transcript: Optional callback receiving (text, is_final) for
+                                user speech transcription (STT).
         """
         self._running = True
         self._audio_out_q = thread_queue.Queue()
@@ -128,7 +131,7 @@ class LiveVoiceSession:
             # Run mic → agent and events → speaker concurrently
             await asyncio.gather(
                 self._mic_stream_to_agent(live_request_queue),
-                self._events_to_speaker(live_events, on_transcript),
+                self._events_to_speaker(live_events, on_agent_transcript, on_user_transcript),
             )
         except asyncio.CancelledError:
             pass
@@ -199,14 +202,16 @@ class LiveVoiceSession:
     async def _events_to_speaker(
         self,
         live_events,
-        on_transcript: Optional[Callable[[str], None]] = None,
+        on_agent_transcript: Optional[Callable[[str, bool], None]] = None,
+        on_user_transcript: Optional[Callable[[str, bool], None]] = None,
     ) -> None:
         """Process events from runner.run_live().
 
-        - audio/pcm chunks  → thread-safe queue → _audio_player_thread
-        - partial text       → on_transcript callback (agent's words)
-        - turn_complete      → print newline
-        - interrupted        → flush audio queue (user interrupted agent)
+        - audio/pcm chunks        → thread-safe queue → _audio_player_thread
+        - input_transcription     → on_user_transcript callback (STT)
+        - output_transcription    → on_agent_transcript callback (TTS text)
+        - turn_complete           → print newline
+        - interrupted             → flush audio queue (user interrupted agent)
         """
         async for event in live_events:
             if event is None:
@@ -214,8 +219,7 @@ class LiveVoiceSession:
 
             # ── Turn boundaries ─────────────────────────────────────────────
             if event.turn_complete:
-                print()  # newline after partial transcript
-                # Check if session is done (finalize_ticket was called)
+                print()  # newline after transcript
                 continue
 
             if event.interrupted:
@@ -228,30 +232,38 @@ class LiveVoiceSession:
                 print("\n[Interrupted]", flush=True)
                 continue
 
-            # ── Content events ──────────────────────────────────────────────
+            # ── User speech transcription (STT) ─────────────────────────────
+            if event.input_transcription and event.input_transcription.text:
+                text = event.input_transcription.text
+                is_final = event.input_transcription.finished
+                if on_user_transcript:
+                    on_user_transcript(text, is_final)
+                else:
+                    print(f"You: {text}", end="\n" if is_final else "", flush=True)
+
+            # ── Agent speech transcription (TTS → text) ──────────────────────
+            if event.output_transcription and event.output_transcription.text:
+                text = event.output_transcription.text
+                is_final = event.output_transcription.finished
+                if on_agent_transcript:
+                    on_agent_transcript(text, is_final)
+                else:
+                    print(text, end="\n" if is_final else "", flush=True)
+
+            # ── Audio PCM → player thread ────────────────────────────────────
             part = (
                 event.content
                 and event.content.parts
                 and event.content.parts[0]
             )
-            if not part:
-                continue
-
-            # Audio PCM → player thread
-            is_audio = (
-                part.inline_data
-                and part.inline_data.mime_type
-                and part.inline_data.mime_type.startswith("audio/pcm")
-            )
-            if is_audio and part.inline_data.data:
-                self._audio_out_q.put(part.inline_data.data)
-
-            # Agent transcript (partial streaming text)
-            if part.text and event.partial:
-                if on_transcript:
-                    on_transcript(part.text)
-                else:
-                    print(part.text, end="", flush=True)
+            if part:
+                is_audio = (
+                    part.inline_data
+                    and part.inline_data.mime_type
+                    and part.inline_data.mime_type.startswith("audio/pcm")
+                )
+                if is_audio and part.inline_data.data:
+                    self._audio_out_q.put(part.inline_data.data)
 
         # live_events exhausted — session over
         self._running = False

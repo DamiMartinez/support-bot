@@ -156,6 +156,50 @@ Audio requirements: a working microphone and speakers. The system uses:
 
 Built-in VAD (Voice Activity Detection) controls turn boundaries — just speak naturally.
 
+#### Supported Languages
+
+The Live API supports **70 languages** (BCP-47 codes):
+
+| Language | Code | Language | Code |
+|----------|------|----------|------|
+| Afrikaans | `af` | Kannada | `kn` |
+| Albanian | `sq` | Kazakh | `kk` |
+| Amharic | `am` | Khmer | `km` |
+| Arabic | `ar` | Korean | `ko` |
+| Armenian | `hy` | Lao | `lo` |
+| Assamese | `as` | Latvian | `lv` |
+| Azerbaijani | `az` | Lithuanian | `lt` |
+| Basque | `eu` | Macedonian | `mk` |
+| Belarusian | `be` | Malay | `ms` |
+| Bengali | `bn` | Malayalam | `ml` |
+| Bosnian | `bs` | Marathi | `mr` |
+| Bulgarian | `bg` | Mongolian | `mn` |
+| Catalan | `ca` | Nepali | `ne` |
+| Chinese | `zh` | Norwegian | `no` |
+| Croatian | `hr` | Odia | `or` |
+| Czech | `cs` | Polish | `pl` |
+| Danish | `da` | Portuguese | `pt` |
+| Dutch | `nl` | Punjabi | `pa` |
+| English | `en` | Romanian | `ro` |
+| Estonian | `et` | Russian | `ru` |
+| Filipino | `fil` | Serbian | `sr` |
+| Finnish | `fi` | Slovak | `sk` |
+| French | `fr` | Slovenian | `sl` |
+| Galician | `gl` | Spanish | `es` |
+| Georgian | `ka` | Swahili | `sw` |
+| German | `de` | Swedish | `sv` |
+| Greek | `el` | Tamil | `ta` |
+| Gujarati | `gu` | Telugu | `te` |
+| Hebrew | `iw` | Thai | `th` |
+| Hindi | `hi` | Turkish | `tr` |
+| Hungarian | `hu` | Ukrainian | `uk` |
+| Icelandic | `is` | Urdu | `ur` |
+| Indonesian | `id` | Uzbek | `uz` |
+| Italian | `it` | Vietnamese | `vi` |
+| Japanese | `ja` | Zulu | `zu` |
+
+> Source: [Gemini Live API documentation](https://ai.google.dev/gemini-api/docs/live-guide)
+
 ### 6. ADK Web UI
 
 ```bash
