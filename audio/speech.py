@@ -30,7 +30,7 @@ from __future__ import annotations
 import asyncio
 import queue as thread_queue
 import threading
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Optional
 
 import numpy as np
 import sounddevice as sd
@@ -84,6 +84,7 @@ class LiveVoiceSession:
         session,
         on_agent_transcript: Optional[Callable[[str, bool], None]] = None,
         on_user_transcript: Optional[Callable[[str, bool], None]] = None,
+        on_turn_complete: Optional[Callable[[], Awaitable[None]]] = None,
     ) -> None:
         """Start the bidirectional voice session.
 
@@ -131,7 +132,7 @@ class LiveVoiceSession:
             # Run mic → agent and events → speaker concurrently
             await asyncio.gather(
                 self._mic_stream_to_agent(live_request_queue),
-                self._events_to_speaker(live_events, on_agent_transcript, on_user_transcript),
+                self._events_to_speaker(live_events, on_agent_transcript, on_user_transcript, on_turn_complete),
             )
         except asyncio.CancelledError:
             pass
@@ -204,6 +205,7 @@ class LiveVoiceSession:
         live_events,
         on_agent_transcript: Optional[Callable[[str, bool], None]] = None,
         on_user_transcript: Optional[Callable[[str, bool], None]] = None,
+        on_turn_complete: Optional[Callable[[], Awaitable[None]]] = None,
     ) -> None:
         """Process events from runner.run_live().
 
@@ -220,6 +222,8 @@ class LiveVoiceSession:
             # ── Turn boundaries ─────────────────────────────────────────────
             if event.turn_complete:
                 print()  # newline after transcript
+                if on_turn_complete:
+                    await on_turn_complete()
                 continue
 
             if event.interrupted:

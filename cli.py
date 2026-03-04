@@ -6,10 +6,12 @@ Usage:
     python cli.py --voice      # voice mode (ADK Live API, native audio)
     python cli.py --session-id <id>   # resume a session
     python cli.py --voice --voice-name Puck   # choose a different voice
+    python cli.py --debug      # print session state after each turn
 """
 
 import argparse
 import asyncio
+import json
 import logging
 import sys
 import uuid
@@ -35,11 +37,21 @@ APP_NAME = "support_bot"
 
 # ── Text mode ─────────────────────────────────────────────────────────────────
 
+def _print_session_state(state: dict) -> None:
+    """Pretty-print session state to the terminal."""
+    print("\n" + "─" * 60)
+    print("  [DEBUG] Session State")
+    print("─" * 60)
+    print(json.dumps(dict(state), indent=2, default=str))
+    print("─" * 60 + "\n")
+
+
 async def run_text_loop(
     runner: Runner,
     session_service: InMemorySessionService,
     session_id: str,
     user_id: str,
+    debug: bool = False,
 ) -> None:
     """Run the agent in text mode, reading from stdin and printing to stdout."""
     print("=" * 60)
@@ -91,9 +103,12 @@ async def run_text_loop(
             session = await session_service.get_session(
                 app_name=APP_NAME, user_id=user_id, session_id=session_id
             )
-            if session and session.state.get("support_phase") == "COMPLETED" and not completed_notified:
-                print("[Ticket created successfully. Type 'quit' to exit or continue chatting.]\n")
-                completed_notified = True
+            if session:
+                if debug:
+                    _print_session_state(session.state)
+                if session.state.get("support_phase") == "COMPLETED" and not completed_notified:
+                    print("[Ticket created successfully. Type 'quit' to exit or continue chatting.]\n")
+                    completed_notified = True
 
     except KeyboardInterrupt:
         print("\n\n[Session interrupted by user]")
@@ -109,6 +124,7 @@ async def run_voice_loop(
     session_id: str,
     user_id: str,
     voice_name: str = "Aoede",
+    debug: bool = False,
 ) -> None:
     """Run the agent in real-time voice mode using ADK Gemini Live API.
 
@@ -157,11 +173,19 @@ async def run_voice_loop(
             print(f"You: {text.strip()}", flush=True)
             turns.append({"role": "user", "content": text.strip()})
 
+    async def _on_turn_complete() -> None:
+        current = await session_service.get_session(
+            app_name=APP_NAME, user_id=user_id, session_id=session_id
+        )
+        if current:
+            _print_session_state(current.state)
+
     try:
         await voice.run(
             runner, session,
             on_agent_transcript=_on_agent_transcript,
             on_user_transcript=_on_user_transcript,
+            on_turn_complete=_on_turn_complete if debug else None,
         )
     except KeyboardInterrupt:
         print("\n\n[Voice session ended by user]")
@@ -217,6 +241,10 @@ async def main() -> None:
     parser.add_argument(
         "--user-id", default="customer_001", help="User/customer identifier"
     )
+    parser.add_argument(
+        "--debug", action="store_true",
+        help="Print full session state after each turn",
+    )
     args = parser.parse_args()
 
     session_id = args.session_id or str(uuid.uuid4())
@@ -250,9 +278,10 @@ async def main() -> None:
         await run_voice_loop(
             runner, session_service, session_id, user_id,
             voice_name=args.voice_name,
+            debug=args.debug,
         )
     else:
-        await run_text_loop(runner, session_service, session_id, user_id)
+        await run_text_loop(runner, session_service, session_id, user_id, debug=args.debug)
 
 
 if __name__ == "__main__":
