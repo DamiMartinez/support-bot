@@ -1,46 +1,28 @@
-"""Sentiment analysis tool: detect customer frustration from message text."""
+"""Sentiment analysis tool: detect customer frustration using Gemini."""
 
-import re
+import json
+import os
 
+from google import genai
+from google.genai import types
 from google.adk.tools import ToolContext
 
-# Weighted keyword lists for simple rule-based sentiment
-_NEGATIVE_KEYWORDS = {
-    "terrible": 3, "awful": 3, "horrible": 3, "outraged": 3, "furious": 3,
-    "disgraceful": 3, "unacceptable": 3, "scam": 3, "fraud": 3,
-    "angry": 2, "frustrated": 2, "disappointing": 2, "useless": 2,
-    "worst": 2, "broken": 2, "damaged": 1, "wrong": 1, "late": 1,
-    "delayed": 1, "never": 1, "still": 1, "waiting": 1, "refund": 1,
-    "cancel": 1, "ridiculous": 2, "incompetent": 2, "waste": 2,
+_client = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY"))
+
+_PROMPT_TEMPLATE = """You are a customer sentiment analyzer for an e-commerce support system.
+Analyze the customer's message and return ONLY a JSON object with these fields:
+- "score": integer 1–5 (1=very frustrated/angry, 3=neutral, 5=very positive/happy)
+- "frustrated": boolean (true if score <= 2)
+- "tone_hint": one sentence of guidance for the support agent on how to adapt their tone
+
+Customer message:
+{message}"""
+
+_FALLBACK = {
+    "score": 3,
+    "frustrated": False,
+    "tone_hint": "Neutral — maintain professional, friendly tone.",
 }
-
-_POSITIVE_KEYWORDS = {
-    "thank": 1, "thanks": 1, "great": 1, "appreciate": 1,
-    "good": 1, "fine": 1, "okay": 1, "happy": 1, "satisfied": 1,
-    "perfect": 2, "excellent": 2, "wonderful": 2,
-}
-
-
-def _compute_score(text: str) -> int:
-    """Compute a 1–5 sentiment score (1=very negative, 5=very positive)."""
-    text_lower = text.lower()
-    tokens = re.split(r"\W+", text_lower)
-    token_set = set(tokens)
-
-    neg_weight = sum(w for kw, w in _NEGATIVE_KEYWORDS.items() if kw in token_set)
-    pos_weight = sum(w for kw, w in _POSITIVE_KEYWORDS.items() if kw in token_set)
-    net = pos_weight - neg_weight
-
-    if net >= 4:
-        return 5
-    elif net >= 2:
-        return 4
-    elif net >= 0:
-        return 3
-    elif net >= -3:
-        return 2
-    else:
-        return 1
 
 
 def analyze_sentiment(message: str, tool_context: ToolContext) -> dict:
@@ -56,21 +38,23 @@ def analyze_sentiment(message: str, tool_context: ToolContext) -> dict:
     Returns:
         A dict with 'score' (int 1-5), 'frustrated' (bool), and 'tone_hint' (str).
     """
-    score = _compute_score(message)
-    frustrated = score <= 2
+    try:
+        response = _client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=_PROMPT_TEMPLATE.format(message=message),
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+            ),
+        )
+        result = json.loads(response.text)
+        score = int(result["score"])
+        frustrated = score <= 2
+        tone_hint = str(result["tone_hint"])
+    except Exception:
+        score = _FALLBACK["score"]
+        frustrated = _FALLBACK["frustrated"]
+        tone_hint = _FALLBACK["tone_hint"]
 
-    if score == 1:
-        tone_hint = "Very frustrated — use maximum empathy, apologize sincerely, offer expedited help."
-    elif score == 2:
-        tone_hint = "Frustrated — acknowledge their frustration, be extra patient and reassuring."
-    elif score == 3:
-        tone_hint = "Neutral — maintain professional, friendly tone."
-    elif score == 4:
-        tone_hint = "Positive — customer is cooperative, keep the momentum."
-    else:
-        tone_hint = "Very positive — customer is happy, mirror their positivity."
-
-    # Persist to session state
     tool_context.state["sentiment_score"] = score
     tool_context.state["frustration_detected"] = frustrated
 

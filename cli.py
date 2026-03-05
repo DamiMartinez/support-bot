@@ -209,6 +209,9 @@ async def _save_session(
     if session:
         extracted = {k: v for k, v in session.state.items() if k.startswith("ticket:")}
 
+    sentiment_score = session.state.get("sentiment_score") if session else None
+    frustration_detected = session.state.get("frustration_detected") if session else None
+
     log = ConversationSession(
         session_id=session_id,
         user_id=user_id,
@@ -217,6 +220,8 @@ async def _save_session(
         turns=turns,
         extracted_data=extracted,
         ticket_id=session.state.get("ticket_id") if session else None,
+        sentiment_score=sentiment_score,
+        frustration_detected=frustration_detected,
     )
     path = save_session_log(log)
     print(f"[Session log saved: {path}]")

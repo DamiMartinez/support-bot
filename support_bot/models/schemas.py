@@ -105,6 +105,8 @@ class ConversationSession(BaseModel):
     turns: list[dict] = []
     extracted_data: dict = {}
     ticket_id: Optional[str] = None
+    sentiment_score: Optional[int] = None       # Final 1–5 score from last analyze_sentiment call
+    frustration_detected: Optional[bool] = None # True if score ≤ 2
 
     @classmethod
     def create(cls, session_id: str, user_id: str) -> "ConversationSession":
